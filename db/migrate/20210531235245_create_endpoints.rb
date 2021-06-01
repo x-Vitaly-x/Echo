@@ -1,3 +1,6 @@
+#
+# Endpoints model, response is made into jsonb object to make work easier
+# #
 class CreateEndpoints < ActiveRecord::Migration[6.1]
   def change
     create_table :endpoints, id: :uuid do |t|

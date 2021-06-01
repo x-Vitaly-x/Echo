@@ -2,8 +2,8 @@
 # Endpoint controller needed to CRUD Endpoint objects, as well as display existing messages
 # #
 class EndpointsController < ApplicationController
-  before_action :require_type, only: [:create]
-  before_action :require_endpoint, only: [:update, :destroy]
+  before_action :require_type, only: :create
+  before_action :require_endpoint, only: %i[update destroy]
 
   # for GET methods to list all endpoints
   def index
@@ -17,10 +17,10 @@ class EndpointsController < ApplicationController
     if @endpoint.save
       render('endpoints/show', formats: :json, status: 201)
     else
-      @errors = @endpoint.errors.full_messages.map { |message| {
-        code: 'can_not_create',
-        detail: message
-      } }
+      @errors = @endpoint.errors.full_messages.map do |message|
+        { code: 'can_not_create',
+          detail: message }
+      end
       render('endpoints/errors', formats: :json, status: 422)
     end
   end
@@ -30,10 +30,9 @@ class EndpointsController < ApplicationController
     if @endpoint.update(update_params)
       render('endpoints/show', formats: :json, status: 200)
     else
-      @errors = @endpoint.errors.full_messages.map { |message| {
-        code: 'can_not_update',
-        detail: message
-      } }
+      @errors = @endpoint.errors.full_messages.map do |message|
+        { code: 'can_not_update', detail: message }
+      end
       render('endpoints/errors', formats: :json, status: 422)
     end
   end
@@ -46,18 +45,11 @@ class EndpointsController < ApplicationController
 
   # method for rendering path of an endpoint, requires correct verb and path parameters
   def render_path
-    @endpoint = Endpoint.find_by_verb_and_path(request.method, '/' + params.require(:path))
+    @endpoint = Endpoint.find_by_verb_and_path(request.method, "/#{params.require(:path)}")
     if @endpoint
-      render(
-        json: JSON.parse(@endpoint.response.dig('body')), formats: :json, status: 200
-      )
+      render(json: JSON.parse(@endpoint.response['body']), formats: :json, status: 200)
     else
-      @errors = [
-        {
-          code: 'not_found',
-          detail: "Requested page \'#{params.require(:path)}\' does not exist"
-        }
-      ]
+      @errors = [{ code: 'not_found', detail: "Requested page \'#{params.require(:path)}\' does not exist" }]
       render('endpoints/errors', formats: :json, status: 404)
     end
   end
@@ -68,7 +60,7 @@ class EndpointsController < ApplicationController
     params.require(:data).require(:attributes).permit(
       :verb,
       :path,
-      response: [:code, :body, headers: :json]
+      response: [:code, :body, { headers: :json }]
     )
   end
 
@@ -76,7 +68,7 @@ class EndpointsController < ApplicationController
     params.require(:data).require(:attributes).permit(
       :verb,
       :path,
-      response: [:code, :body, headers: :json]
+      response: [:code, :body, { headers: :json }]
     )
   end
 
@@ -86,28 +78,28 @@ class EndpointsController < ApplicationController
 
   # check to see that type parameter is given, as required in specification
   def require_type
-    if type_param != 'endpoints'
-      @errors = [
-        {
-          code: 'wrong_type',
-          message: 'type parameter must be "endpoints"'
-        }
-      ]
-      render('endpoints/errors', formats: :json, status: 500)
-    end
+    return if type_param == 'endpoints'
+
+    @errors = [
+      {
+        code: 'wrong_type',
+        message: 'type parameter must be "endpoints"'
+      }
+    ]
+    render('endpoints/errors', formats: :json, status: 500)
   end
 
   # check to see that given endpoint id is correct
   def require_endpoint
     @endpoint = Endpoint.find_by_id(params.require(:id))
-    if @endpoint.nil?
-      @errors = [
-        {
-          code: 'not_found',
-          detail: "Requested endpoint does not exist"
-        }
-      ]
-      render('endpoints/errors', formats: :json, status: 404)
-    end
+    return if @endpoint
+
+    @errors = [
+      {
+        code: 'not_found',
+        detail: 'Requested endpoint does not exist'
+      }
+    ]
+    render('endpoints/errors', formats: :json, status: 404)
   end
 end
