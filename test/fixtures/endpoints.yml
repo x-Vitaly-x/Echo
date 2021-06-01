@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+existing_endpoint:
+  path: '/foo/bar/baz'
+  verb: 'GET'
+  response:
+    code: 200
+    headers: { }
+    body: "{\"message\":\"Hello, world\"}"
